@@ -73,12 +73,12 @@ You should see a version number like `psql (PostgreSQL) 14.x`.
 <details>
 <summary style="font-size: 1.3em;">Postgresql on Windows</summary>
 
-To install PostgresSQL you will need to assign a password for PostgreSQL itself (they call it superuser with user ID is "_postgres_"). Think of one and write it down. After installation, you will also create another user ID called _`mypguser`_ with its own password. This _`mypguser`_ will be used for database access. Think of password for _`mypguser`_ and write it down. Of course, don't reuse existing password.
+To install PostgreSQL you will need to assign a password for PostgreSQL itself (they call it superuser with user ID is "_postgres_"). Think of one and write it down. After installation, you will also create another user ID called _`mypguser`_ with its own password. This _`mypguser`_ will be used for database access. Think of password for _`mypguser`_ and write it down. Of course, don't reuse existing password.
 
-The installer for Postgresql or Windows is [here](https://www.postgresql.org/download/windows). Run the install program, accepting all default values. You can watch [this](https://youtu.be/GpqJzWCcQXY?si=2ebcJ6FqmGkLChJL) video from 0:00 - 6:00 to make sure the application is installed correctly.
+The installer for Postgresql for Windows is [here](https://www.postgresql.org/download/windows). Run the install program, accepting all default values. You can watch [this](https://youtu.be/GpqJzWCcQXY?si=2ebcJ6FqmGkLChJL) video from 0:00 - 6:00 to make sure the application is installed correctly.
 
 Once the installation is complete, open the Windows Services panel (_Task Manager_) and verify that the Postgresql service is running. Then open a **`cmd`** prompt (**not Git Bash**) and type the following command and press "Enter".
-**Note**: Remember to check your installed **PostgreSQL version**. The command below uses PostgreSQL version **17**.
+**Note**: You need to check your installed **PostgreSQL version**. The command below uses PostgreSQL version **17**.
 
 ```
 "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost
@@ -95,8 +95,7 @@ postgres=#
 
 This means you're now connected to PostgreSQL! Next you will need to run series of PostgreSQL SQL commands that you need to run to set up your database environment.
 
-**Note**: You need to run each command one at a time, pressing Enter after each one. **Remember** to replace <pg-password> with your actual password what you would like to have for _`mypguser`_ before running the first command!
-**Note**: SQL commands are typically terminated by a semicolon (;) and Strings are enclosed in single quotes '...'
+**Note**: You need to run each command, one at a time, pressing Enter after each one. **Remember** to replace `<pg-password>` with your actual password what you would like to have for _`mypguser`_ before running the first command! SQL commands are typically terminated by a semicolon (;) and Strings are enclosed in single quotes '...'
 
 ```
 CREATE ROLE mypguser LOGIN CREATEDB PASSWORD '<pg-password>';
