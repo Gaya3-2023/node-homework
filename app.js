@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 const errorHandler = require("./middleware/error-handler");
 const notFound = require("./middleware/not-found");
-//const {register} = require("./controllers/userController");
 const userRouter = require("./routes/userRoutes");
 
 
@@ -19,27 +18,15 @@ app.use(express.json({limit: "1kb"}));
 app.use("/api/users",userRouter);
 
 app.get("/", (req, res) => {
-  //res.send("Hello, World!");
-   res.json({message: "Hello World!"});
+  res.json({message: "Hello World!"});
 });
 
 app.post('/testpost',
        (req,res) => { 
-          //res.send("POST Request Called")
-            res.json({message:"POST Request Called"});
+          res.json({message:"POST Request Called"});
           });
 
          
-//app.post("/api/users/register",register);       
-
-/*app.post("/api/users/register", (req, res)=>{
-    const newUser = {...req.body}; // this makes a copy
-    global.users.push(newUser);
-    global.user_id = newUser;  // After the registration step, the user is set to logged on.
-    delete req.body.password;
-    res.status(201).json(req.body);
-});*/
-
 app.use(notFound);
 app.use(errorHandler);
 
@@ -48,8 +35,7 @@ const server = app.listen(port, () =>
       console.log(`Server is listening on port ${port}...`),
     );
 
-  
-       
+      
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`Port ${port} is already in use.`);
