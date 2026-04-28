@@ -3,7 +3,8 @@ const app = express();
 const errorHandler = require("./middleware/error-handler");
 const notFound = require("./middleware/not-found");
 const userRouter = require("./routes/userRoutes");
-
+const taskRouter = require("./routes/taskRoutes");
+const authMiddleware = require("./middleware/auth");
 
 global.user_id = null;
 global.users = [];
@@ -16,6 +17,7 @@ app.use((req, res, next) => {
 
 app.use(express.json({limit: "1kb"}));
 app.use("/api/users",userRouter);
+app.use("/api/tasks",authMiddleware,taskRouter);
 
 app.get("/", (req, res) => {
   res.json({message: "Hello World!"});
