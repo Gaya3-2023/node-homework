@@ -7,9 +7,9 @@ async function index(req,res){
     const result = await pool.query(`SELECT id, title, is_completed FROM tasks WHERE user_id = $1`,
   [global.user_id]
 );   
-   /* if(result.rows.length === 0){
+    if(result.rowCount === 0){
       return res.status(StatusCodes.NOT_FOUND).json({message: "No Tasks for logged on User",}); 
-    }  */
+    }  
     return res.status(200).json(result.rows);
   
 }
@@ -40,7 +40,7 @@ async function show(req,res){
     }*/
     const task = await pool.query(`SELECT id, title, is_completed FROM tasks where user_id = $1 and id =$2`,[global.user_id,req.params.id]);
    
-   if(task.rows.length === 0){
+   if(task.rowCount === 0){
     return res.status(StatusCodes.NOT_FOUND).json({message: "That task was not found"}); 
    }
    return res.status(200).json(task.rows[0]);

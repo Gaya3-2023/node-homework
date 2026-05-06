@@ -5,7 +5,7 @@ const notFound = require("./middleware/not-found");
 const userRouter = require("./routes/userRoutes");
 const taskRouter = require("./routes/taskRoutes");
 const authMiddleware = require("./middleware/auth");
-const pool = require("./db/pg-pool.js");
+const pool = require("./db/pg-pool");
 
 global.user_id = null;
 //global.users = [];
