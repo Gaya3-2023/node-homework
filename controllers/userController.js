@@ -16,13 +16,11 @@ async function comparePassword(inputPassword, storedHash) {
   const [salt, key] = storedHash.split(":");
   const keyBuffer = Buffer.from(key, "hex");
   const derivedKey = await scrypt(inputPassword, salt, 64);
-  if (keyBuffer.length !== derivedKey.length) return false;
   return crypto.timingSafeEqual(keyBuffer, derivedKey);
 }
 
+
 async function register(req,res,next){
-   // console.log("User register - GLOBAL USER:", global.user_id);
-   try{
    if(!req.body) req.body={};
    const { error, value } = userSchema.validate(req.body, {
     abortEarly: false
@@ -33,14 +31,12 @@ async function register(req,res,next){
   }
    let user = null;
    //Hash the password
-   
    value.hashed_password = await hashPassword(value.password);
-   
+  try {
     user = await pool.query(`INSERT INTO users (email, name, hashed_password) 
       VALUES ($1, $2, $3) RETURNING id, email, name`,
       [value.email, value.name, value.hashed_password]
     ); // note that you use a parameterized query
-   // console.log("user value inside register : ",user.rows);
     global.user_id = user.rows[0].id  //set global.user_id
     return res.status(201).json({name: user.rows[0].name,
       email: user.rows[0].email,});
@@ -54,11 +50,8 @@ async function register(req,res,next){
  
 };
 
-async function logon(req,res,next){
-  //  console.log("User Logon - GLOBAL USER:", global.user_id);
-   try{
+async function logon(req,res){
     if(!req.body) req.body={};   
-    
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [req.body.email,]); 
      if(result.rows.length === 0 ){
        return res.status(StatusCodes.UNAUTHORIZED)
@@ -71,14 +64,9 @@ async function logon(req,res,next){
         return res.status(StatusCodes.UNAUTHORIZED)
                .json({message:"Authentication Failed"});
     }
-  //  console.log("result data inside logon :",result.rows[0].id);
     global.user_id = result.rows[0].id //findUser.email;
         return res.status(StatusCodes.OK)
                   .json({message:"Success" , name: result.rows[0].name, email: result.rows[0].email}); 
-  }
-  catch(e){
-    return next(e);
-  }              
 };
 
 function logoff(req,res){
