@@ -20,20 +20,28 @@ let saveTaskId = null;
 describe("test that database and tables exist", () => {
   it("connects to database", async () => {
     let databaseExists = true;
+   // console.log("Testing database connection...");
     try {
       await pool.query("SELECT 1;");
     } catch (err) {
-      console.log("Error: the test database hasn't been created.");
+     // console.log("Error: the test database hasn't been created.");
       databaseExists = false;
     }
     expect(databaseExists).toBe(true);
   });
   it("clears the tasks table", async () => {
-    expect(async () => await pool.query("DELETE FROM tasks;")).not.toThrow();
+     //console.log("Attempting to clear tasks table...");
+
+     //expect(async () => await pool.query("DELETE FROM tasks;")).not.toThrow();
+     await expect(pool.query("DELETE FROM tasks;")).resolves.not.toThrow();
+   
   });
   it("clears the users table", async () => {
-    expect(async () => await pool.query("DELETE FROM users;")).not.toThrow();
-  });
+    //expect(async () => await pool.query("DELETE FROM users;")).not.toThrow();
+    await expect(pool.query("DELETE FROM users;")).resolves.not.toThrow();
+   
+  });  
+
 });
 
 afterAll(async () => {
@@ -50,12 +58,17 @@ describe("testing logon, register, and logoff", () => {
         password: "Pa$$word20",
       },
     });
+    //console.log("Register request body:", req.body);
     saveRes = httpMocks.createResponse();
     await register(req, saveRes, () => {});
+   //  console.log("Register status:", saveRes.statusCode);
+    //console.log("Register response:", saveRes._getData());
+
     expect(saveRes.statusCode).toBe(201);
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
       "jim@sample.com",
     ]);
+    // console.log("Database result:", result.rows);
     user1 = result.rows[0].id;
   });
 
@@ -64,13 +77,17 @@ describe("testing logon, register, and logoff", () => {
       method: "POST",
       body: { email: "jim@sample.com", password: "Pa$$word20" },
     });
+    // console.log("Logon request:", req.body);
     saveRes = httpMocks.createResponse();
     await logon(req, saveRes);
+    // console.log("Logon status:", saveRes.statusCode);
+   // console.log("Logon response:", saveRes._getJSONData());
     expect(saveRes.statusCode).toBe(200);
   });
 
   it("returns the expected name.", () => {
     saveData = saveRes._getJSONData();
+    // console.log("Saved response data:", saveData);
     expect(saveData.name).toBe("Jim");
   });
 
@@ -79,8 +96,11 @@ describe("testing logon, register, and logoff", () => {
       method: "POST",
       body: { email: "jim@sample.com", password: "bad password" },
     });
+     //console.log("Bad logon attempt:", req.body);
     saveRes = httpMocks.createResponse();
     await logon(req, saveRes);
+    //console.log("Bad logon status:", saveRes.statusCode);
+    //console.log("Bad logon response:", saveRes._getData());
     expect(saveRes.statusCode).toBe(401);
   });
   it("You can't register again with the same email.", async () => {
@@ -92,8 +112,11 @@ describe("testing logon, register, and logoff", () => {
         password: "Pa$$word20",
       },
     });
+   // console.log("Duplicate register attempt:", req.body);
     saveRes = httpMocks.createResponse();
     await register(req, saveRes, () => {});
+     //console.log("Duplicate register status:", saveRes.statusCode);
+    //console.log("Duplicate register response:", saveRes._getData());
     expect(saveRes.statusCode).toBe(400);
   });
 
@@ -106,13 +129,15 @@ describe("testing logon, register, and logoff", () => {
         password: "Pa$$word20",
       },
     });
+    //console.log("Second user register:", req.body);
     saveRes = httpMocks.createResponse();
     await register(req, saveRes, () => {});
     expect(saveRes.statusCode).toBe(201);
-
+      //console.log("Second register status:", saveRes.statusCode);
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
       "manuel@sample.com",
     ]);
+     //console.log("Second user DB result:", result.rows);
     user2 = result.rows[0].id;
   });
 
@@ -121,16 +146,22 @@ describe("testing logon, register, and logoff", () => {
       method: "POST",
       body: { email: "manuel@sample.com", password: "Pa$$word20" },
     });
+    //console.log("Second user logon:", req.body);
     saveRes = httpMocks.createResponse();
     await logon(req, saveRes);
+     //console.log("Second user logon status:", saveRes.statusCode);
+    //console.log("Second user logon response:", saveRes._getJSONData());
     expect(saveRes.statusCode).toBe(200);
   });
   it("You can now logoff.", async () => {
     const req = httpMocks.createRequest({
       method: "POST",
     });
+    // console.log("Attempting logoff");
     saveRes = httpMocks.createResponse();
     await logoff(req, saveRes);
+    //console.log("Logoff status:", saveRes.statusCode);
+    //console.log("Logoff response:", saveRes._getData());
     expect(saveRes.statusCode).toBe(200);
   });
 });
