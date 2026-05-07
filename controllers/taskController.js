@@ -3,7 +3,9 @@ const { taskSchema,patchTaskSchema } = require("../validation/taskSchema");
 const pool = require("../db/pg-pool");
 
 /*This function will return the lists of tasks for the currently logged on user*/
-async function index(req,res){   
+async function index(req,res,next){   
+    //console.log("index - GLOBAL USER:", global.user_id);
+    try{
     const result = await pool.query(`SELECT id, title, is_completed FROM tasks WHERE user_id = $1`,
   [global.user_id]
 );   
@@ -11,11 +13,17 @@ async function index(req,res){
       return res.status(StatusCodes.NOT_FOUND).json({message: "No Tasks for logged on User",}); 
     }  
     return res.status(200).json(result.rows);
+  }
+  catch(e){
+    return next(e);
+  }
   
 }
 /*This creates a new entry in the list of tasks for the currently logged on user*/
 
-async function create(req,res){
+async function create(req,res,next){
+   //console.log("create - GLOBAL USER:", global.user_id);
+   try{
    if (!req.body) req.body = {};
     const {error,value} = taskSchema.validate(req.body,{ abortEarly: false });
      if(error){
@@ -28,30 +36,42 @@ async function create(req,res){
   [value.title, value.isCompleted, global.user_id]);
    
     
-    return res.status(StatusCodes.CREATED).json(result.rows[0]);   
+    return res.status(StatusCodes.CREATED).json(result.rows[0]);  
+   }
+   catch(e){
+     return next(e);
+   } 
    
 };
 
 /*Returns the task with a particular ID for the currently logged on user*/
-async function show(req,res){
+async function show(req,res,next){
+   //console.log("show - GLOBAL USER:", global.user_id);
   /*  const taskToShow = parseInt(req.params?.id);
     if(isNaN(taskToShow)){
       return res.status(400). json({message :" The task ID passed is invalid"})
     }*/
+   try{
     const task = await pool.query(`SELECT id, title, is_completed FROM tasks where user_id = $1 and id =$2`,[global.user_id,req.params.id]);
    
    if(task.rowCount === 0){
     return res.status(StatusCodes.NOT_FOUND).json({message: "That task was not found"}); 
    }
    return res.status(200).json(task.rows[0]);
+  }
+  catch(e){
+    return next(e);
+  }
 }
 
 /*Updates the task with a particular ID for the currently logged on user*/
-async function update(req,res){
+async function update(req,res,next){
+   //console.log("update - GLOBAL USER:", global.user_id);
  /* const taskToFind = parseInt(req.params?.id);
     if (isNaN(taskToFind)) {
        return res.status(400).json({message: "The task ID passed is not valid."})
     }*/
+   try{
     if (!req.body) req.body = {};
     const { error, value } = patchTaskSchema.validate(req.body, {
     abortEarly: false,
@@ -71,15 +91,21 @@ async function update(req,res){
     if(updatedTask.rows.length === 0){
        return res.status(StatusCodes.NOT_FOUND).json({message:"Task not found"});
     }         
-    return res.status(200). json(updatedTask.rows[0]);
+    return res.status(200).json(updatedTask.rows[0]);
+  }
+  catch(e){
+    return next(e);
+  }
     
 }
 /*Deletes the task with a particular ID of the currently logged on user*/
-async function deleteTask(req,res){
+async function deleteTask(req,res,next){
+   //console.log("DElete- GLOBAL USER:", global.user_id);
   /*const taskToFind = parseInt(req.params?.id); 
 if (!taskToFind) {
   return res.status(400).json({message: "The task ID passed is not valid."})
 }*/
+try{
 const deletedTask = await pool.query(
     `DELETE FROM tasks
      WHERE id = $1 AND user_id = $2
@@ -91,6 +117,10 @@ if(deletedTask.rows.length === 0){
   return res.status(StatusCodes.NOT_FOUND).json({message: "That task was not found"}); 
 }
 return res.status(200).json(deletedTask.rows[0]); 
+}
+catch(e){
+  return next(e);
+}
 };
 
 module.exports= {index,create,show,update,deleteTask};

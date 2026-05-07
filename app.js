@@ -20,15 +20,6 @@ app.use(express.json({limit: "1kb"}));
 app.use("/api/users",userRouter);
 app.use("/api/tasks",authMiddleware,taskRouter);
 
-app.get("/", (req, res) => {
-  res.json({message: "Hello World!"});
-});
-
-app.post('/testpost',
-       (req,res) => { 
-          res.json({message:"POST Request Called"});
-          });
-
 //Health check endpoint to verify database connectivity
 app.get("/health", async (req, res) => {
   try {
@@ -38,7 +29,17 @@ app.get("/health", async (req, res) => {
     res.status(500).json({ message: `db not connected, error: ${ err.message }` });
   }
 });
-        
+      
+app.get("/", (req, res) => {
+  res.json({message: "Hello World!"});
+});
+
+app.post('/testpost',
+       (req,res) => { 
+          res.json({message:"POST Request Called"});
+          });
+
+  
 app.use(notFound);
 app.use(errorHandler);
 
