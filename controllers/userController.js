@@ -43,7 +43,7 @@ async function register(req,res,next){
     
   } catch (e) { // the email might already be registered
   if (e.code === "23505") { // this means the unique constraint for email was violated
-     return res.status(400).json({message:"Unqiue constraint for Email was Violated"});
+     return res.status(400).json({message:"Unique constraint for Email was Violated"});
   }
   return next(e); // all other errors get passed to the error handler
 }   
