@@ -23,17 +23,21 @@ describe("test that database and tables exist", () => {
     try {
       await pool.query("SELECT 1;");
     } catch (err) {
-      console.log("Error: the test database hasn't been created.");
-      databaseExists = false;
+        databaseExists = false;
     }
     expect(databaseExists).toBe(true);
   });
   it("clears the tasks table", async () => {
-    expect(async () => await pool.query("DELETE FROM tasks;")).not.toThrow();
+      //expect(async () => await pool.query("DELETE FROM tasks;")).not.toThrow();
+     await expect(pool.query("DELETE FROM tasks;")).resolves.not.toThrow();
+   
   });
   it("clears the users table", async () => {
-    expect(async () => await pool.query("DELETE FROM users;")).not.toThrow();
-  });
+    //expect(async () => await pool.query("DELETE FROM users;")).not.toThrow();
+    await expect(pool.query("DELETE FROM users;")).resolves.not.toThrow();
+   
+  });  
+
 });
 
 afterAll(async () => {
@@ -50,6 +54,7 @@ describe("testing logon, register, and logoff", () => {
         password: "Pa$$word20",
       },
     });
+   
     saveRes = httpMocks.createResponse();
     await register(req, saveRes, () => {});
     expect(saveRes.statusCode).toBe(201);
@@ -109,7 +114,6 @@ describe("testing logon, register, and logoff", () => {
     saveRes = httpMocks.createResponse();
     await register(req, saveRes, () => {});
     expect(saveRes.statusCode).toBe(201);
-
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
       "manuel@sample.com",
     ]);
