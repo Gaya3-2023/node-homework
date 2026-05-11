@@ -5,7 +5,8 @@ const notFound = require("./middleware/not-found");
 const userRouter = require("./routes/userRoutes");
 const taskRouter = require("./routes/taskRoutes");
 const authMiddleware = require("./middleware/auth");
-const pool = require("./db/pg-pool");
+//const pool = require("./db/pg-pool");
+const prisma = require("./db/prisma");
 
 global.user_id = null;
 //global.users = [];
@@ -23,10 +24,11 @@ app.use("/api/tasks",authMiddleware,taskRouter);
 //Health check endpoint to verify database connectivity
 app.get("/health", async (req, res) => {
   try {
-    await pool.query("SELECT 1");
+   // await pool.query("SELECT 1");
+    await prisma.$queryRaw`SELECT 1`;
     res.json({ status: "ok", db: "connected" });
   } catch (err) {
-    res.status(500).json({ message: `db not connected, error: ${ err.message }` });
+    res.status(500).json({ status: 'error', db: 'not connected', error: err.message });
   }
 });
       
@@ -50,6 +52,9 @@ const server = app.listen(port, () =>
 
       
 server.on('error', (err) => {
+   if (err.name === "PrismaClientInitializationError") {
+  console.error("Couldn't connect to the database. Is it running?")
+} 
    if (err.code === "ECONNREFUSED" && err.port === 5432) { // the postgresql port
     console.log("The database connection was refused.  Is your database service running?");
   }
@@ -70,7 +75,9 @@ async function shutdown(code = 0) {
     await new Promise(resolve => server.close(resolve));
     console.log('HTTP server closed.');
     // If you have DB connections, close them here
-    await pool.end();
+    //await pool.end();
+    await prisma.$disconnect();
+    console.log("Prisma disconnected");
   } catch (err) {
     console.error('Error during shutdown:', err);
     code = 1;
