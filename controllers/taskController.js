@@ -106,9 +106,10 @@ async function show(req,res,next){
     if(isNaN(taskToShow)){
       return res.status(400). json({message :" The task ID passed is invalid"})
     }
-  try{
+  try{    
    const task = await prisma.task.findUnique({ where: { id: taskToShow,userId:global.user_id } ,
-                                select: { title: true, isCompleted: true, id: true }}); 
+                                select: { title: true, isCompleted: true, id: true,
+                                    User: {   select: { name: true,email: true } }}}); 
     return res.status(200).json(task);                             
    }
    catch (err) {
@@ -117,9 +118,7 @@ async function show(req,res,next){
           } else {
               return next(err); // pass other errors to the global error handler
           }
-     }                                
- 
-  
+     }                             
 }
 
 /*Updates the task with a particular ID for the currently logged on user*/
