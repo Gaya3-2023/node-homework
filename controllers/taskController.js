@@ -4,12 +4,86 @@ const prisma = require("../db/prisma");
 
 /*This function will return the lists of tasks for the currently logged on user*/
 async function index(req,res){   
-    const tasks = await prisma.task.findMany({ where: {  userId: global.user_id,},
-                select: { title: true, isCompleted: true, id: true }});  
-   if(tasks.length === 0){
+  // Parse pagination parameters
+const page = parseInt(req.query.page) || 1;
+const limit = parseInt(req.query.limit) || 10;
+const skip = (page - 1) * limit;
+
+// Build where clause with optional search filter
+const whereClause = { userId: global.user_id };
+
+if (req.query.find) {
+  whereClause.title = {
+    contains: req.query.find,        // Matches %find% pattern
+    mode: 'insensitive'              // Case-insensitive search (ILIKE in PostgreSQL)
+  };
+}
+
+const getOrderBy = (query) => {
+  const validSortFields = ["title", "priority", "createdAt", "id", "isCompleted"];
+  const sortBy = query.sortBy || "createdAt";
+  const sortDirection = query.sortDirection === "asc" ? "asc" : "desc";
+  
+  if (validSortFields.includes(sortBy)) {
+    return { [sortBy]: sortDirection };
+  }
+  return { createdAt: "desc" }; // default fallback
+};
+
+   /* const tasks = await prisma.task.findMany({ where: {  userId: global.user_id,},
+                select: { title: true, isCompleted: true, id: true }}); */
+   //Get tasks with pagination and eager loading
+  const tasks = await prisma.task.findMany({
+  where: 
+    whereClause, // using global.user_id from auth
+  
+  select: { 
+    id: true,
+    title: true, 
+    isCompleted: true,
+    priority: true,
+    createdAt: true,
+    User: {
+      select: {
+        name: true,
+        email: true
+      }
+    }
+  },
+  skip: skip,
+  take: limit,
+  //orderBy: { createdAt: 'desc' }
+  orderBy: getOrderBy(req.query),
+});
+
+if(tasks.length === 0){
       return res.status(StatusCodes.NOT_FOUND).json({message: "No Tasks for logged on User",}); 
-    }  
-    return res.status(200).json(tasks);
+ } 
+// Get total count for pagination metadata
+const totalTasks = await prisma.task.count({
+  where:  whereClause
+});
+
+// Build pagination object with complete metadata
+// Hint: The test expects page, limit, total, pages, hasNext, hasPrev
+// Use Math.ceil() to calculate pages, and compare page * limit with total for hasNext
+const pagination = {
+  // ... you need to build this object
+   page,
+  limit,
+  total: totalTasks,
+  pages: Math.ceil(totalTasks / limit),
+  hasNext: page * limit < totalTasks,
+  hasPrev: page > 1
+};
+
+     
+    // Return tasks with pagination information
+return res.status(200).json({
+  tasks:tasks,
+  pagination:pagination
+});
+   // return res.status(200).json(tasks);
   
 }
 
@@ -21,8 +95,8 @@ async function create(req,res){
      if(error){
        return res.status(StatusCodes.BAD_REQUEST).json({message : error.message});
      }
-    const result = await prisma.task.create({ data:{title:value.title,isCompleted:value.isCompleted,userId:global.user_id},
-    select : {title:true,isCompleted:true,id:true}});         
+    const result = await prisma.task.create({ data:{title:value.title,isCompleted:value.isCompleted,userId:global.user_id,priority:value.priority},
+                        select : {title:true,isCompleted:true,id:true,priority:true}});         
     return res.status(StatusCodes.CREATED).json(result);      
 };
 
@@ -65,7 +139,7 @@ async function update(req,res,next){
     try {
       const updatedTask = await prisma.task.update({ data: value,
                               where: {id: taskToFind, userId: global.user_id,},
-                          select: { title: true, isCompleted: true, id: true }});
+                          select: { title: true, isCompleted: true, id: true,priority:true }});
        return res.status(200).json(updatedTask);                    
 
     } catch (err) {
@@ -86,7 +160,7 @@ async function deleteTask(req,res,next){
    }
 try{
   const deletedTask = await prisma.task.delete({ where: {id: taskToFind, userId: global.user_id,},
-                          select: { title: true, isCompleted: true, id: true }});
+                          select: { title: true, isCompleted: true, id: true,priority:true }});
   return res.status(200).json(deletedTask);                         
   }
   catch (err) {
@@ -98,4 +172,45 @@ try{
      }    
 };
 
-module.exports= {index,create,show,update,deleteTask};
+//Create Multiple tasks in a single database operation createMany
+async function bulkCreate(req,res,next){
+ const { tasks } = req.body;
+ //validate the tasks array
+ if(!tasks || !Array.isArray(tasks) || tasks.length === 0){
+   return res.status(400).json({error: "Invalid request data. Expected an array of tasks."})
+ };
+
+//validate all tasks before insertion
+const validTasks = [];
+for(const task of tasks){
+  const {error,value} = taskSchema.validate(task);
+  if(error){
+    return res.status(400).json({
+      error: "Validation failed",
+      details: error.details,
+    });
+  }
+  validTasks.push({
+    title: value.title,
+    isCompleted:value.isCompleted || false,
+    priority: value.priority || 'medium',
+    userId:global.user_id
+  });
+}//end of For loop
+//use CreateMany for batch insertion
+try{
+  const result = await prisma.task.createMany({
+    data: validTasks,
+    skipDuplicates:false
+  });
+  res.status(201).json({
+    message:"success!",
+    tasksCreated:result.count,
+    totalRequested: validTasks.length
+  });
+}//end of try
+catch(err){
+  return next(err);
+}
+};
+module.exports= {index,create,show,update,deleteTask,bulkCreate};

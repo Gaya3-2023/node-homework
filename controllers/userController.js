@@ -29,10 +29,58 @@ async function register(req,res,next){
   if (error) {
     return res.status(400).json({ message: error.message,details: error.details, });
   }
-   let user = null;
+   //let user = null;
    //Hash the password
    value.hashedPassword = await hashPassword(value.password);
-  try {
+   try{
+    const result = await prisma.$transaction(async (tx) => {
+      //Create user account (similar to Assignment6, but using tx instead of prisma)
+      const newUser = await tx.user.create({
+       data: { name:value.name, email: value.email, hashedPassword:value.hashedPassword },
+       select: { name: true, email: true, id: true} 
+      }) ;
+      //Create 3 welcome tasks using createMany
+      const welcomeTaskData = [ 
+       {title:"Complete your profile",userId:newUser.id,priority:"medium"},
+       {title:"Add your first task",userId:newUser.id,priority:"high"},
+       {title:"Explore the app",userId:newUser.id,priority:"low"}];
+       await tx.task.createMany({data: welcomeTaskData});
+       //Fetch the created tasks to return them
+       const welcomeTasks = await tx.task.findMany({
+        where: {
+          userId: newUser.id,
+          title : { in: welcomeTaskData.map(t=>t.title)}
+        },
+        select:{
+          id:true,
+          title:true,
+          isCompleted:true,
+          userId:true,
+          priority:true
+        }
+       });
+       return{ user:newUser,welcomeTasks};
+    }) //end of prisma.$transaction
+     //store the user ID globally for session management(not secure for production)
+     global.user_id = result.user.id;
+     //send response with status 201
+     res.status(201);
+     res.json({
+      user: result.user,
+      welcomeTasks:result.welcomeTasks,
+      transactionStatus:"success"
+     });
+     return;
+   } //end of try
+   catch(err){
+    if(err.code === "P2002"){
+      return res.status(400).json({error: "Email already registered"});
+    }
+    else{
+      return next(err);  //error handler takes care of other errors
+    }
+   }//end of catch
+  /*try {
     user = await prisma.user.create({
     data: { name:value.name, email: value.email, hashedPassword:value.hashedPassword },
     select: { name: true, email: true, id: true} 
@@ -46,7 +94,7 @@ async function register(req,res,next){
 }   
     global.user_id = user.id  //set global.user_id
     return res.status(201).json({name: user.name,
-      email: user.email,});
+      email: user.email,});*/
  
 };
 
@@ -66,7 +114,7 @@ async function logon(req,res){
     }
     global.user_id = result.id //findUser.email;
         return res.status(StatusCodes.OK)
-                  .json({message:"Success" , name: result.name, email: result.email}); 
+                  .json({message:"success" , name: result.name, email: result.email}); 
 };
 
 function logoff(req,res){
@@ -75,4 +123,40 @@ function logoff(req,res){
 
 };
 
-module.exports={register,logon,logoff};
+// In userController.js (if you have a show method)
+async function show (req, res) {
+  const userId = parseInt(req.params.id);
+  
+  if (isNaN(userId)) {
+    return res.status(400).json({ error: "Invalid user ID" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      Task: {
+        where: { isCompleted: false },
+        select: { 
+          id: true, 
+          title: true, 
+          priority: true,
+          createdAt: true 
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      }
+    }
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(200).json({User:user});
+};
+
+module.exports={register,logon,logoff,show};
