@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const { userSchema } = require("../validation/userSchema");
-const pool = require("../db/pg-pool");
+const prisma = require("../db/prisma");
 
 const crypto = require("crypto");
 const util = require("util");
@@ -31,42 +31,42 @@ async function register(req,res,next){
   }
    let user = null;
    //Hash the password
-   value.hashed_password = await hashPassword(value.password);
+   value.hashedPassword = await hashPassword(value.password);
   try {
-    user = await pool.query(`INSERT INTO users (email, name, hashed_password) 
-      VALUES ($1, $2, $3) RETURNING id, email, name`,
-      [value.email, value.name, value.hashed_password]
-    ); // note that you use a parameterized query
-    global.user_id = user.rows[0].id  //set global.user_id
-    return res.status(201).json({name: user.rows[0].name,
-      email: user.rows[0].email,});
+    user = await prisma.user.create({
+    data: { name:value.name, email: value.email, hashedPassword:value.hashedPassword },
+    select: { name: true, email: true, id: true} 
+  });  
     
-  } catch (e) { // the email might already be registered
-  if (e.code === "23505") { // this means the unique constraint for email was violated
-     return res.status(400).json({message:"Unique constraint for Email was Violated"});
-  }
+  } catch (e) { 
+    if(e.name === "PrismaClientKnownRequestError" && e.code === "P2002") {
+        return res.status(400).json({message:"Unique constraint for Email was Violated"});
+    }
   return next(e); // all other errors get passed to the error handler
 }   
+    global.user_id = user.id  //set global.user_id
+    return res.status(201).json({name: user.name,
+      email: user.email,});
  
 };
 
 async function logon(req,res){
-    if(!req.body) req.body={};   
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [req.body.email,]); 
-     if(result.rows.length === 0 ){
+    if(!req.body) req.body={}; 
+    const email = req.body.email.toLowerCase() // Joi validation always converts the email to lower case   
+    const result = await prisma.user.findUnique({ where: { email : email }});
+    if(!result){
        return res.status(StatusCodes.UNAUTHORIZED)
                   .json({message:"Authentication Failed"});  
      }
-
     //compare hashed password
-    const isMatch = await comparePassword(req.body.password,result.rows[0].hashed_password);
+    const isMatch = await comparePassword(req.body.password,result.hashedPassword);
     if(!isMatch){
         return res.status(StatusCodes.UNAUTHORIZED)
                .json({message:"Authentication Failed"});
     }
-    global.user_id = result.rows[0].id //findUser.email;
+    global.user_id = result.id //findUser.email;
         return res.status(StatusCodes.OK)
-                  .json({message:"Success" , name: result.rows[0].name, email: result.rows[0].email}); 
+                  .json({message:"Success" , name: result.name, email: result.email}); 
 };
 
 function logoff(req,res){
