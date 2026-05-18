@@ -30,8 +30,6 @@ const getOrderBy = (query) => {
   return { createdAt: "desc" }; // default fallback
 };
 
-   /* const tasks = await prisma.task.findMany({ where: {  userId: global.user_id,},
-                select: { title: true, isCompleted: true, id: true }}); */
    //Get tasks with pagination and eager loading
   const tasks = await prisma.task.findMany({
   where: 
@@ -52,7 +50,6 @@ const getOrderBy = (query) => {
   },
   skip: skip,
   take: limit,
-  //orderBy: { createdAt: 'desc' }
   orderBy: getOrderBy(req.query),
 });
 
@@ -65,11 +62,8 @@ const totalTasks = await prisma.task.count({
 });
 
 // Build pagination object with complete metadata
-// Hint: The test expects page, limit, total, pages, hasNext, hasPrev
-// Use Math.ceil() to calculate pages, and compare page * limit with total for hasNext
 const pagination = {
-  // ... you need to build this object
-   page,
+  page,
   limit,
   total: totalTasks,
   pages: Math.ceil(totalTasks / limit),
@@ -83,8 +77,7 @@ return res.status(200).json({
   tasks:tasks,
   pagination:pagination
 });
-   // return res.status(200).json(tasks);
-  
+   
 }
 
 /*This creates a new entry in the list of tasks for the currently logged on user*/
@@ -110,15 +103,15 @@ async function show(req,res,next){
    const task = await prisma.task.findUnique({ where: { id: taskToShow,userId:global.user_id } ,
                                 select: { title: true, isCompleted: true, id: true,
                                     User: {   select: { name: true,email: true } }}}); 
+    if(!task){
+     return res.status(404).json({message: "The task was not found."});
+   }                                
     return res.status(200).json(task);                             
    }
-   catch (err) {
-          if (err.code === "P2025" ) {
-                return res.status(404).json({ message: "The task was not found."})
-          } else {
-              return next(err); // pass other errors to the global error handler
-          }
-     }                             
+   
+   catch (err) {         
+              return next(err); // pass other errors to the global error handler   
+      }                            
 }
 
 /*Updates the task with a particular ID for the currently logged on user*/

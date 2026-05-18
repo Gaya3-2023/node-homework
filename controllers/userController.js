@@ -31,14 +31,12 @@ async function register(req,res,next){
   }
    //let user = null;
    //Hash the password
-   value.hashedPassword = await hashPassword(value.password);
+   const { password, ...cleanData } = value;
+   const hashedPassword = await hashPassword(password);
+    
    try{
     const result = await prisma.$transaction(async (tx) => {
-      //Create user account (similar to Assignment6, but using tx instead of prisma)
-      const newUser = await tx.user.create({
-       data: { name:value.name, email: value.email, hashedPassword:value.hashedPassword },
-       select: { name: true, email: true, id: true} 
-      }) ;
+      const newUser = await tx.user.create({data: {...cleanData,hashedPassword},select:{name:true,email:true,id:true}})
       //Create 3 welcome tasks using createMany
       const welcomeTaskData = [ 
        {title:"Complete your profile",userId:newUser.id,priority:"medium"},
@@ -63,7 +61,7 @@ async function register(req,res,next){
     }) //end of prisma.$transaction
      //store the user ID globally for session management(not secure for production)
      global.user_id = result.user.id;
-     //send response with status 201
+     
      res.status(201);
      res.json({
       user: result.user,
@@ -79,28 +77,12 @@ async function register(req,res,next){
     else{
       return next(err);  //error handler takes care of other errors
     }
-   }//end of catch
-  /*try {
-    user = await prisma.user.create({
-    data: { name:value.name, email: value.email, hashedPassword:value.hashedPassword },
-    select: { name: true, email: true, id: true} 
-  });  
-    
-  } catch (e) { 
-    if(e.name === "PrismaClientKnownRequestError" && e.code === "P2002") {
-        return res.status(400).json({message:"Unique constraint for Email was Violated"});
-    }
-  return next(e); // all other errors get passed to the error handler
-}   
-    global.user_id = user.id  //set global.user_id
-    return res.status(201).json({name: user.name,
-      email: user.email,});*/
- 
+   }//end of catch   
 };
 
 async function logon(req,res){
     if(!req.body) req.body={}; 
-    const email = req.body.email.toLowerCase() // Joi validation always converts the email to lower case   
+    const email = req.body.email;   
     const result = await prisma.user.findUnique({ where: { email : email }});
     if(!result){
        return res.status(StatusCodes.UNAUTHORIZED)
@@ -123,7 +105,6 @@ function logoff(req,res){
 
 };
 
-// In userController.js (if you have a show method)
 async function show (req, res) {
   const userId = parseInt(req.params.id);
   

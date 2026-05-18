@@ -1,5 +1,4 @@
 const prisma = require("../db/prisma");
-//const { StatusCodes } = require("http-status-codes");
 
 //get /api/analytics/users/:id
 async function getUserAnalytics(req,res){
@@ -9,7 +8,7 @@ if (isNaN(userId)) {
 }
 //Checking user existence in database
 
-const userExists = await prisma.user.findUnique({ where: { id:userId }});  //if matching record exists, returns it,otherwise return null
+const userExists = await prisma.user.findUnique({ where: { id:userId }});  
 if(!userExists){
   return res.status(404).json({message:"User not found"});
 }                    
@@ -42,12 +41,9 @@ const recentTasks = await prisma.task.findMany({
 });
 
 // Calculate weekly progress using groupBy
-// First, calculate the date from one week ago
-// Hint: Use new Date() and setDate() to subtract 7 days
 const oneWeekAgo = new Date(Date.now());
-oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);// ... you need to calculate this
+oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-// Then use groupBy with a where clause filtering by createdAt >= oneWeekAgo
 const weeklyProgress = await prisma.task.groupBy({
   by: ['createdAt'],
   where: {
@@ -59,7 +55,7 @@ const weeklyProgress = await prisma.task.groupBy({
 
 // Return response with taskStats, recentTasks, and weeklyProgress
 res.status(200).json({
-    taskStats:taskStats,recentTasks:recentTasks,weeklyProgress:weeklyProgress   // ... you need to return the three properties
+    taskStats:taskStats,recentTasks:recentTasks,weeklyProgress:weeklyProgress   
 });
 return;
 }
@@ -72,7 +68,6 @@ const limit = parseInt(req.query.limit) || 10;
 const skip = (page - 1) * limit;
 
 // Get users with task counts using _count aggregation
-// Note: In Prisma, you need to use include for relations, then transform the result
 const usersRaw = await prisma.user.findMany({
   include: {
     Task: {
@@ -104,8 +99,6 @@ const users = usersRaw.map(user => ({
 // Get total count for pagination
 const totalUsers = await prisma.user.count();
 // Build pagination object with page, limit, total, pages, hasNext, hasPrev
-// Hint: Use Math.ceil() for pages, compare page * limit with total for hasNext
-
 const pagination = {
   page,
   limit,
