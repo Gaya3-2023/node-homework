@@ -5,8 +5,17 @@ const prisma = require("../db/prisma");
 /*This function will return the lists of tasks for the currently logged on user*/
 async function index(req,res){   
   // Parse pagination parameters
-const page = parseInt(req.query.page) || 1;
-const limit = parseInt(req.query.limit) || 10;
+//const page = parseInt(req.query.page) || 1; //const limit = parseInt(req.query.limit) || 10;
+//parseInt won't work - parseInt("ab")  will return NaN || 1  will always be 1.
+const page = req.query.page ? Number(req.query.page) : 1 ;
+const limit = req.query.limit ? Number(req.query.limit) : 10;
+//Input validation
+if(!Number.isInteger(page) || page < 1){
+  return res.status(400).json("Page should be greater than or equal to 1");
+}
+if (!Number.isInteger(limit) || limit < 1 || limit > 100){
+  return res.status(400).json("Limit value should be between 1 and 100");
+}
 const skip = (page - 1) * limit;
 
 // Build where clause with optional search filter
