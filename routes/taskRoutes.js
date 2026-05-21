@@ -2,7 +2,8 @@ const express = require("express");
 
 const router = express.Router();
 const { create,index,show,update,deleteTask,bulkCreate } = require("../controllers/taskController");
-
+const jwtMiddleware = require("../middleware/jwtMiddleware");
+router.use(jwtMiddleware);
 router.route("/").get(index);  //List tasks with pagination,eager loading ,and search filter
 router.route("/").post(create);  //Create single task
 router.route("/bulk").post(bulkCreate);  //Bulk create tasks(createMany)

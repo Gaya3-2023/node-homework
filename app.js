@@ -5,7 +5,13 @@ const notFound = require("./middleware/not-found");
 const userRouter = require("./routes/userRoutes");
 const taskRouter = require("./routes/taskRoutes");
 const analyticsRouter = require("./routes/analyticsRoutes");
-const authMiddleware = require("./middleware/auth");
+
+app.set("trust proxy", 1);
+const helmet = require("helmet");
+const { xss } = require("express-xss-sanitizer");
+const rateLimiter = require("express-rate-limit");
+
+//const authMiddleware = require("./middleware/auth");
 //const pool = require("./db/pg-pool");
 const prisma = require("./db/prisma");
 
@@ -13,15 +19,31 @@ global.user_id = null;
 //global.users = [];
 //global.tasks = [];
 
+app.use(
+  rateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+  }),
+);
+app.use(helmet());
+
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 app.use((req, res, next) => {
   console.log(`${req.method}   ${req.path}   ${JSON.stringify(req.query)}`);
   next();
 });
 
 app.use(express.json({limit: "1kb"}));
+
+app.use(xss());
+
 app.use("/api/users",userRouter);
-app.use("/api/tasks",authMiddleware,taskRouter);
-app.use("/api/analytics",authMiddleware,analyticsRouter);
+//app.use("/api/tasks",authMiddleware,taskRouter);
+app.use("/api/tasks",taskRouter);
+//app.use("/api/analytics",authMiddleware,analyticsRouter);
+app.use("/api/analytics",analyticsRouter);
 
 //Health check endpoint to verify database connectivity
 app.get("/health", async (req, res) => {
