@@ -4,6 +4,7 @@ const errorHandler = require("./middleware/error-handler");
 const notFound = require("./middleware/not-found");
 const userRouter = require("./routes/userRoutes");
 const taskRouter = require("./routes/taskRoutes");
+const analyticsRouter = require("./routes/analyticsRoutes");
 const authMiddleware = require("./middleware/auth");
 //const pool = require("./db/pg-pool");
 const prisma = require("./db/prisma");
@@ -20,6 +21,7 @@ app.use((req, res, next) => {
 app.use(express.json({limit: "1kb"}));
 app.use("/api/users",userRouter);
 app.use("/api/tasks",authMiddleware,taskRouter);
+app.use("/api/analytics",authMiddleware,analyticsRouter);
 
 //Health check endpoint to verify database connectivity
 app.get("/health", async (req, res) => {
