@@ -62,9 +62,6 @@ const getOrderBy = (query) => {
   orderBy: getOrderBy(req.query),
 });
 
-if(tasks.length === 0){
-      return res.status(StatusCodes.NOT_FOUND).json({message: "No Tasks for logged on User",}); 
- } 
 // Get total count for pagination metadata
 const totalTasks = await prisma.task.count({
   where:  whereClause
@@ -109,7 +106,7 @@ async function show(req,res,next){
       return res.status(400). json({message :" The task ID passed is invalid"})
     }
   try{    
-   const task = await prisma.task.findUnique({ where: { id: taskToShow,userId:req.user.id } ,
+   const task = await prisma.task.findFirst({ where: { id: taskToShow,userId:req.user.id } ,
                                 select: { title: true, isCompleted: true, id: true,priority:true,createdAt:true,
                                     User: {   select: { name: true,email: true } }}}); 
     if(!task){

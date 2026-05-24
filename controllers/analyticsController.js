@@ -1,13 +1,13 @@
 const prisma = require("../db/prisma");
 
 //get /api/analytics/users/:id
-async function getUserAnalytics(req,res){
+async function getUserAnalytics(req,res,next){
  const userId = parseInt(req.params.id);
 if (isNaN(userId)) {
   return res.status(400). json({message :"Invalid ID"})
 }
 //Checking user existence in database
-
+try{
 const userExists = await prisma.user.findUnique({ where: { id:userId }});  
 if(!userExists){
   return res.status(404).json({message:"User not found"});
@@ -59,9 +59,13 @@ res.status(200).json({
 });
 return;
 }
+catch(err){
+  next(err);
+}
+}
 
 //Shows all users with their task Statistics
-async function getUsersWithStats (req,res){
+async function getUsersWithStats (req,res,next){
  // Parse pagination parameters
 const page = req.query.page ? Number(req.query.page) : 1 ;
 const limit = req.query.limit ? Number(req.query.limit) : 10;
@@ -75,7 +79,7 @@ if (!Number.isInteger(limit) || limit < 1 || limit > 100){
 
 const skip = (page - 1) * limit;
 
-
+try{
 // Get users with task counts using _count aggregation
 const usersRaw = await prisma.user.findMany({
   include: {
@@ -121,9 +125,13 @@ res.status(200).json({
   users:users,pagination:pagination,// ... you need to return users and pagination
 });
 }
+catch(err){
+  next(err);
+}
+}
 
 //Task Search with RAW SQL
-async function searchTasks(req,res){
+async function searchTasks(req,res,next){
       const searchQuery = req.query.q;
     
      //validate search query
@@ -140,7 +148,7 @@ async function searchTasks(req,res){
      const searchPattern = `%${searchQuery}%`;
      const exactMatch = searchQuery;
      const startsWith = `${searchQuery}%`;
-
+try{
      //Use raw SQL for complex text search with parameterized queries
     const searchResults = await prisma.$queryRaw`
   SELECT 
@@ -170,6 +178,10 @@ async function searchTasks(req,res){
    res.status(200).json({results:searchResults,
                          query:searchQuery,
                         count:searchResults.length});
+   }
+   catch(err){
+    next(err);
+   }                       
 
 };
 module.exports= {getUserAnalytics,getUsersWithStats,searchTasks}
