@@ -82,7 +82,7 @@ async function register(req,res,next){
     }) //end of prisma.$transaction
      //store the user ID globally for session management(not secure for production)
      const csrfToken = setJwtCookie(req,res,result.user);
-     global.user_id = result.user.id;
+     //global.user_id = result.user.id;
     
      res.status(201);
      res.json({
@@ -117,14 +117,14 @@ async function logon(req,res){
         return res.status(StatusCodes.UNAUTHORIZED)
                .json({message:"Authentication Failed"});
     }
-    global.user_id = result.id //findUser.email;
+    //global.user_id = result.id //findUser.email;
     const csrfToken = setJwtCookie(req,res,result);
         return res.status(StatusCodes.OK)
                   .json({message:"success" , name: result.name, email: result.email, csrfToken:csrfToken}); 
 };
 
 function logoff(req,res){
-    global.user_id = null;
+   // global.user_id = null;
     res.clearCookie("jwt", cookieFlags(req));
     return res.sendStatus(StatusCodes.OK);
 

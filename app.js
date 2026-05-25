@@ -15,7 +15,7 @@ const rateLimiter = require("express-rate-limit");
 //const pool = require("./db/pg-pool");
 const prisma = require("./db/prisma");
 
-global.user_id = null;
+//global.user_id = null;
 //global.users = [];
 //global.tasks = [];
 
