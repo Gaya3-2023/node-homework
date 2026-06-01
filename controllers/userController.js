@@ -6,6 +6,27 @@ const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 
+const { randomUUID } = require("crypto");
+const jwt = require("jsonwebtoken");
+
+const cookieFlags = (req) => {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // only when HTTPS is available
+    sameSite: "Strict",
+  };
+};
+
+const setJwtCookie = (req, res, user) => {
+  // Sign JWT
+  const payload = { id: user.id, csrfToken: randomUUID() };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" }); // 1 hour expiration
+  // Set cookie.  Note that the cookie flags have to be different in production and in test.
+  res.cookie("jwt", token, { ...cookieFlags(req), maxAge: 3600000 }); // 1 hour expiration
+  return payload.csrfToken; // this is needed in the body returned by logon() or register()
+};
+
+
 async function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
   const derivedKey = await scrypt(password, salt, 64);
@@ -60,13 +81,15 @@ async function register(req,res,next){
        return{ user:newUser,welcomeTasks};
     }) //end of prisma.$transaction
      //store the user ID globally for session management(not secure for production)
-     global.user_id = result.user.id;
-     
+     const csrfToken = setJwtCookie(req,res,result.user);
+     //global.user_id = result.user.id;
+    
      res.status(201);
      res.json({
       user: result.user,
       welcomeTasks:result.welcomeTasks,
-      transactionStatus:"success"
+      transactionStatus:"success",
+      csrfToken:csrfToken
      });
      return;
    } //end of try
@@ -94,13 +117,15 @@ async function logon(req,res){
         return res.status(StatusCodes.UNAUTHORIZED)
                .json({message:"Authentication Failed"});
     }
-    global.user_id = result.id //findUser.email;
+    //global.user_id = result.id //findUser.email;
+    const csrfToken = setJwtCookie(req,res,result);
         return res.status(StatusCodes.OK)
-                  .json({message:"success" , name: result.name, email: result.email}); 
+                  .json({message:"success" , name: result.name, email: result.email, csrfToken:csrfToken}); 
 };
 
 function logoff(req,res){
-    global.user_id = null;
+   // global.user_id = null;
+    res.clearCookie("jwt", cookieFlags(req));
     return res.sendStatus(StatusCodes.OK);
 
 };

@@ -19,7 +19,7 @@ if (!Number.isInteger(limit) || limit < 1 || limit > 100){
 const skip = (page - 1) * limit;
 
 // Build where clause with optional search filter
-const whereClause = { userId: global.user_id };
+const whereClause = { userId: req.user.id };
 
 if (req.query.find) {
   whereClause.title = {
@@ -62,9 +62,6 @@ const getOrderBy = (query) => {
   orderBy: getOrderBy(req.query),
 });
 
-if(tasks.length === 0){
-      return res.status(StatusCodes.NOT_FOUND).json({message: "No Tasks for logged on User",}); 
- } 
 // Get total count for pagination metadata
 const totalTasks = await prisma.task.count({
   where:  whereClause
@@ -97,7 +94,7 @@ async function create(req,res){
      if(error){
        return res.status(StatusCodes.BAD_REQUEST).json({message : error.message});
      }
-    const result = await prisma.task.create({ data:{title:value.title,isCompleted:value.isCompleted,userId:global.user_id,priority:value.priority},
+    const result = await prisma.task.create({ data:{title:value.title,isCompleted:value.isCompleted,userId:req.user.id,priority:value.priority},
                         select : {title:true,isCompleted:true,id:true,priority:true}});         
     return res.status(StatusCodes.CREATED).json(result);      
 };
@@ -109,7 +106,7 @@ async function show(req,res,next){
       return res.status(400). json({message :" The task ID passed is invalid"})
     }
   try{    
-   const task = await prisma.task.findUnique({ where: { id: taskToShow,userId:global.user_id } ,
+   const task = await prisma.task.findFirst({ where: { id: taskToShow,userId:req.user.id } ,
                                 select: { title: true, isCompleted: true, id: true,priority:true,createdAt:true,
                                     User: {   select: { name: true,email: true } }}}); 
     if(!task){
@@ -139,7 +136,7 @@ async function update(req,res,next){
     }
     try {
       const updatedTask = await prisma.task.update({ data: value,
-                              where: {id: taskToFind, userId: global.user_id,},
+                              where: {id: taskToFind, userId: req.user.id,},
                           select: { title: true, isCompleted: true, id: true,priority:true }});
        return res.status(200).json(updatedTask);                    
 
@@ -160,7 +157,7 @@ async function deleteTask(req,res,next){
      return res.status(400).json({message: "The task ID passed is not valid."})
    }
 try{
-  const deletedTask = await prisma.task.delete({ where: {id: taskToFind, userId: global.user_id,},
+  const deletedTask = await prisma.task.delete({ where: {id: taskToFind, userId: req.user.id,},
                           select: { title: true, isCompleted: true, id: true,priority:true }});
   return res.status(200).json(deletedTask);                         
   }
@@ -195,7 +192,7 @@ for(const task of tasks){
     title: value.title,
     isCompleted:value.isCompleted || false,
     priority: value.priority || 'medium',
-    userId:global.user_id
+    userId:req.user.id
   });
 }//end of For loop
 //use CreateMany for batch insertion
