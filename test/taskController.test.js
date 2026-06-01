@@ -108,8 +108,6 @@ describe("testing task creation", () => {
     catch(e){
       expect(e.name).toBe("TypeError");
     }
-
-
   });
   /*21.  If you use user1's id, the call returns a 200 status.*/
   it("21. If you use user1's id on index() the call returns a 200 status.", async () => {

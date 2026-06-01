@@ -22,8 +22,6 @@ describe("register a user ", () => {
       password: "Pa$$word20",
     };
     saveRes = await agent.post("/api/users/register").send(newUser);
-    console.log(saveRes.body);
-    console.log(saveRes.header);
     expect(saveRes.status).toBe(201);
   });
   it("47. Registration returns an object with the expected name.",() =>{
@@ -37,19 +35,21 @@ describe("register a user ", () => {
     const registeredUser ={ email: "jdeere@example.com", password: "Pa$$word20" },
     
      saveRes = await agent.post("/api/users/logon").send(registeredUser);
-    expect(saveRes.status).toBe(200);
+     expect(saveRes.status).toBe(200);
   });
   it("50. Verify that you are logged in :/api/tasks should not return a 401",async () => {
-    saveRes = await agent.get("/api/tasks");
-    expect(saveRes.status).not.toBe(401);
+    const res = await agent.get("/api/tasks");
+    expect(res.status).not.toBe(401);
   });
   it("51. Verify that you can log out.",async() => {
-     //res = await agent.post("/api/users/logout").set("x-CSRF-Token",saveRes.body.csrfToken);
-     //expect(res.satus).toBe(200);
+     const token = saveRes.body.csrfToken;
+     const cookies = saveRes.headers["set-cookie"];
+     logoutRes = await agent.post("/api/users/logoff").set("set-cookie",cookies).set("X-CSRF-Token", token).send();  
+      expect(logoutRes.status).toBe(200);
   });
   it("52. Make sure that you are really logged out : /api/tasks should now return a 401",async () => {
-    //const res = await agent.get("/api/tasks");
-    // expect(res.status).toBe(401);
+    const res = await agent.get("/api/tasks");
+   expect(res.status).toBe(401);
   });
 })
 
