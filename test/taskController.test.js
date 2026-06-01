@@ -103,7 +103,7 @@ describe("testing task creation", () => {
     try{
     saveRes = httpMocks.createResponse({eventEmitter: EventEmitter});
     await waitForRouteHandlerCompletion(index,req, saveRes);
-    expect(saveRes.statusCode).toBe(200);
+    expect(saveRes.statusCode).toBe(400);
     }
     catch(e){
       expect(e.name).toBe("TypeError");

@@ -35,17 +35,16 @@ describe("register a user ", () => {
     const registeredUser ={ email: "jdeere@example.com", password: "Pa$$word20" },
     
      saveRes = await agent.post("/api/users/logon").send(registeredUser);
+     token = saveRes.body.csrfToken; 
      expect(saveRes.status).toBe(200);
   });
   it("50. Verify that you are logged in :/api/tasks should not return a 401",async () => {
     const res = await agent.get("/api/tasks");
     expect(res.status).not.toBe(401);
   });
-  it("51. Verify that you can log out.",async() => {
-     const token = saveRes.body.csrfToken;
-     const cookies = saveRes.headers["set-cookie"];
-     logoutRes = await agent.post("/api/users/logoff").set("set-cookie",cookies).set("X-CSRF-Token", token).send();  
-      expect(logoutRes.status).toBe(200);
+  it("51. Verify that you can log out.",async() => {        
+    const logoutRes = await agent.post("/api/users/logoff").set("x-csrf-token",token);  
+     expect(logoutRes.status).toBe(200);
   });
   it("52. Make sure that you are really logged out : /api/tasks should now return a 401",async () => {
     const res = await agent.get("/api/tasks");
