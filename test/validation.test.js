@@ -107,7 +107,7 @@ describe("task object validation tests",() => {
    /* 11. If isCompleted in the provided object has the value true, it remains true after validation.*/
    it("11. If isCompleted in the provided object has the value true, it remains true after validation",() =>{
         const { value } = taskSchema.validate(
-        { title: "Test", isCompleted: true},
+        { title: "Test", isCompleted: true },
          { abortEarly: false },
     );
      expect(value.isCompleted).toBe(true);  
