@@ -8,6 +8,7 @@ const analyticsRouter = require("./routes/analyticsRoutes");
 
 app.set("trust proxy", 1);
 const helmet = require("helmet");
+const cors = require("cors");
 const { xss } = require("express-xss-sanitizer");
 const rateLimiter = require("express-rate-limit");
 
@@ -26,6 +27,8 @@ app.use(
   }),
 );
 app.use(helmet());
+
+app.use(cors());
 
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());

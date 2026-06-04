@@ -13,7 +13,8 @@ const cookieFlags = (req) => {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production", // only when HTTPS is available
-    sameSite: "Strict",
+    //sameSite: "Strict",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   };
 };
 
