@@ -55,10 +55,12 @@ app.get("/health", async (req, res) => {
     res.status(500).json({ status: 'error', db: 'not connected', error: err.message });
   }
 });
-      
+
+/*
 app.get("/", (req, res) => {
   res.json({message: "Hello World!"});
 });
+*/
 
 app.post('/testpost',
        (req,res) => { 
