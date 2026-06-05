@@ -14,7 +14,7 @@ const cookieFlags = (req) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production", // only when HTTPS is available
     //sameSite: "Strict",
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",    
   };
 };
 
@@ -141,11 +141,12 @@ async function register(req,res,next){
 
 async function logon(req,res){
     if(!req.body) req.body={}; 
-    const email = req.body.email;   
+     // const email = req.body.email;   
+    const email = req.body.email?.trim().toLowerCase();  //since neon is storing the email in lowercase
     const result = await prisma.user.findUnique({ where: { email : email }});
     if(!result){
        return res.status(StatusCodes.UNAUTHORIZED)
-                  .json({message:"Authentication Failed"});  
+                  .json({message:"Invalid credentials"});  
      }
     //compare hashed password
     const isMatch = await comparePassword(req.body.password,result.hashedPassword);
