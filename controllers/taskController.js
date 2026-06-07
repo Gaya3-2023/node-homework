@@ -67,6 +67,11 @@ const totalTasks = await prisma.task.count({
   where:  whereClause
 });
 
+if(tasks.length  === 0)
+{
+  return res.status(404).json({message :"No Tasks Found",});
+}
+
 // Build pagination object with complete metadata
 const pagination = {
   page,

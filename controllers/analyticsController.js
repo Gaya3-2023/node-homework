@@ -2,7 +2,8 @@ const prisma = require("../db/prisma");
 
 //get /api/analytics/users/:id
 async function getUserAnalytics(req,res,next){
- const userId = parseInt(req.params.id);
+ //const userId = parseInt(req.params.id);
+ const userId = parseInt(req.user.id); //Added based on review #8 comment
 if (isNaN(userId)) {
   return res.status(400). json({message :"Invalid ID"})
 }
@@ -163,6 +164,7 @@ try{
   JOIN users u ON t.user_id = u.id
   WHERE t.title ILIKE ${searchPattern} 
      OR u.name ILIKE ${searchPattern}
+     AND t.user_id = ${req.user.id} 
   ORDER BY 
     CASE 
       WHEN t.title ILIKE ${exactMatch} THEN 1
