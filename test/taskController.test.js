@@ -34,12 +34,12 @@ beforeAll(async () => {
 
 describe("testing task creation", () => {
   it("14. Creates a task without a user id", async () => {
+    expect.assertions(1);
     const req = httpMocks.createRequest({
       method: "POST",
       body: { title: "first task" },
     });
-    saveRes = httpMocks.createResponse({eventEmitter: EventEmitter});;
-    expect.assertions(1);
+    saveRes = httpMocks.createResponse({eventEmitter: EventEmitter});    
     // be sure you pass the event emitter class
     try{
     await waitForRouteHandlerCompletion(create,req, saveRes);
@@ -51,6 +51,7 @@ describe("testing task creation", () => {
   });
   /*15.You can't create a task with a bogus user id*/
   it("15. You can't create a task with a bogus user id", async() => {
+    expect.assertions(1);
     const req = httpMocks.createRequest({
       method: "POST",
       body: { title: "first task" },
