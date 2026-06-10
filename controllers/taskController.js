@@ -177,7 +177,7 @@ try{
 
 //Create Multiple tasks in a single database operation createMany
 async function bulkCreate(req,res,next){
- const { tasks } = req.body;
+ const  tasks  = req.body;
  //validate the tasks array
  if(!tasks || !Array.isArray(tasks) || tasks.length === 0){
    return res.status(400).json({error: "Invalid request data. Expected an array of tasks."})
@@ -216,4 +216,89 @@ catch(err){
   return next(err);
 }
 };
-module.exports= {index,create,show,update,deleteTask,bulkCreate};
+
+//delete multiple tasks in single operation
+async function bulkDelete(req,res,next){
+ const { taskIds }  = req.body;
+ //validate the tasks array
+ if(!taskIds || !Array.isArray(taskIds) || taskIds.length === 0){
+   return res.status(400).json({error: "Invalid request data. Expected an array of task ids."});
+ };
+ try{
+  const result = await prisma.task.deleteMany({ where: {  id: { in: taskIds },  
+                                                           userId: req.user.id,}});     
+  return res.status(200).json({message : "success!", tasksDeleted : result.count ,totalRequested : taskIds.length});     
+ }
+ catch(err){
+  return next(err);
+ }
+};
+
+//update multiple tasks in single operation
+async function bulkUpdateWithIds(req,res,next){
+  const { taskIds } = req.body;
+  //validate the tasks array
+ if(!taskIds || !Array.isArray(taskIds) || taskIds.length === 0){
+   return res.status(400).json({error: "Invalid request data. Expected an array of task ids."});
+ };
+ try{
+   const result = await prisma.task.updateMany({ data: { isCompleted: true, priority:"low" } ,
+                                                 where: {  id: { in: taskIds },  
+                                                           userId: req.user.id,}});     
+  return res.status(200).json({message : "success!", tasksUpdated : result.count ,totalRequested : taskIds.length});     
+ 
+ }
+ catch(err){
+   return next(err);
+ }
+};
+//batch partial updates 
+// Allow each item in the bulk‐update array to carry its own payload. ex:[{ id: 1, isCompleted: true }, { id: 2, priortiy:"Low" }]
+async function bulkUpdate(req, res, next) {
+  const updates = req.body;
+  if (!Array.isArray(updates) || updates.length === 0) {
+    return res.status(400).json({
+      message: "Request body must be a non-empty array",
+    });
+  }
+  try {
+    const operations = [];
+    for (const item of updates) {
+      const { id, ...data } = item;
+
+      if (!id || typeof id !== "number") {
+        return res.status(400).json({
+          message: "Each update item must contain a valid id",
+        });
+      }
+      const { error, value } = patchTaskSchema.validate(data, {abortEarly: false,});
+
+      if (error) {
+        return res.status(400).json({
+          message: `Validation failed for task ${id}`,
+          errors: error.details,
+        });
+      }
+      operations.push(
+        prisma.task.update({
+          where: {
+            id,
+            userId: req.user.id,
+          },
+          data: value,
+        })
+      );
+    } //end of for
+
+    const results = await prisma.$transaction(operations);
+
+    return res.status(200).json({
+      message: "Tasks updated successfully",
+      taskUpdated: results.length,
+      taskRequested:updates.length
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+module.exports= {index,create,show,update,deleteTask,bulkCreate,bulkDelete,bulkUpdateWithIds,bulkUpdate};
