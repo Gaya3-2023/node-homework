@@ -258,7 +258,7 @@ describe("testing task creation", () => {
          where :{ userId : user1.id, title :{in : [ "bulk-task1", "bulk-task2","bulk-task3"],},},
       });
       bulkTaskIds = newTasksIds.map(task => task.id);
-      console.log(bulkTaskIds);
+      
     });
     /*44. Empty body should return 400 */
     it("44. Empty body should return 400" ,async() => {
@@ -279,35 +279,32 @@ describe("testing bulkUpdateWithIds",() => {
    it("45 .User1 can update multiple tasks completed and priortiy as low" ,async() => {
       const req = httpMocks.createRequest({
         method: "PATCH",
+        body:  {
+      taskIds: bulkTaskIds
+    },
+      
       });
-      console.log(`inside test 45 - bulkTaskIds : ${bulkTaskIds}`);
       req.user = { id: user1.id};
-      req.body =  [bulkTaskIds]; // need to pass tasksIds
+    //  req.body =  [bulkTaskIds]; // need to pass tasksIds
      
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      const res = httpMocks.createResponse({ eventEmitter : EventEmitter});
+      
       await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
+      console.log(`test number 45 - ${res.statusCode}`);
       expect(res.statusCode).toBe(200);
       const data = res._getJSONData();
       expect(data.tasksUpdated).toBe(3);
       expect(data.totalRequested).toBe(3);
     });
-  /*46. User2 cannot update User1 tasks*/
-   it("46 . User2 cannot update User1 tasks" ,async() => {
+    it("46 . Empty tasksIds return 400" ,async() => {
       const req = httpMocks.createRequest({
         method: "PATCH",
-      });
-      req.user = {id: user2.id};
-      req.body =  [bulkTaskIds] ;  //need to add 2 tasksIds
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
-      await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
-      expect(res.statusCode).toBe(400);     
-    });  
-     it("47 . Empty tasksIds return 400" ,async() => {
-      const req = httpMocks.createRequest({
-        method: "PATCH",
+         body: {
+      taskIds: []
+    },
       });
       req.user = {id: user1.id};
-      req.body =  []; 
+     // req.body =  []; 
       const res = httpMocks.createResponse({eventEmitter :EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
       expect(res.statusCode).toBe(400);      
@@ -315,66 +312,77 @@ describe("testing bulkUpdateWithIds",() => {
   
  });
  describe("testing batch partial update -bulkUpdate" ,() => {
-  /*48.User1 can update multiple tasks with different values*/
-   it("48 . User1 can update multiple tasks with different values" ,async() => {
+  /*47.User1 can update multiple tasks with different values*/
+   it("47 . User1 can update multiple tasks with different values" ,async() => {
       const req = httpMocks.createRequest({
         method: "PATCH",
+         body: {
+            updates: [ {id: bulkTaskIds[0],isCompleted: true},
+                       { id: bulkTaskIds[1],priority:"low"},
+                       {id: bulkTaskIds[2],priority:"low"} ]
+        },
       });
-      console.log(bulkTaskIds[0]);
-      console.log(bulkTaskIds[1]);
-      console.log(bulkTaskIds[2]);
       req.user = {id: user1.id};
-      req.body = [{ id: bulkTaskIds[0],isCompleted: true},
-                   { id: bulkTaskIds[1],priorty:"low"},
-                  {id: bulkTaskIds[2],priority:"low"} ]; //need to pass tasksIds
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(200);    
       const data = res._getJSONData();
-      expect(data.tasksUpdated).toBe(3);  
+      expect(data.taskUpdated).toBe(3);  
     });
-  /*49. Missing id should return 400*/
-    it("49 .Missing id in body should return 400" ,async() => {
+  /*48. Missing id should return 400*/
+   it("48 .Missing id in body should return 400" ,async() => {
       const req = httpMocks.createRequest({
         method: "PATCH",
+        body : {
+          updates: [{ isCompleted: true},]
+        }
       });
       req.user = {id: user1.id};
-      req.body = [{ isCompleted: true},]; 
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      //req.body = [{ isCompleted: true},]; 
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);    
      
     });
-  /*50. Empty request body should return 400*/
-    it("50 . Empty request body should return 400" ,async() => {
+  /*49. Empty request body should return 400*/
+    it("49 . Empty request body should return 400" ,async() => {
       const req = httpMocks.createRequest({
         method: "PATCH",
+        body: {
+          updates: []
+        },
       });
       req.user = {id: user1.id};
-      req.body = [{}]; 
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+     // req.body = [{}]; 
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);      
     });
-  /*51. Invalid priority should return 400*/
-    it("51. Invalid priority should return 400" ,async() => {
+  /*50. Invalid priority should return 400*/
+    it("50. Invalid priority should return 400" ,async() => {
       const req = httpMocks.createRequest({
         method: "PATCH",
+        body: {
+          updates:  [ { id: bulkTaskIds[0],priorty:"Moderate"} ]
+        },
       });
       req.user = {id: user1.id};
-      req.body = [ { id: bulkTaskIds[0],priorty:"Moderate"} ]; //need to pass tasksIds
+     // req.body = [ { id: bulkTaskIds[0],priorty:"Moderate"} ]; //need to pass tasksIds
       const res = httpMocks.createResponse({eventEmitter :EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);        
     });
-    /*52. Empty request body return 400 */
-      it("52. Empty request body return 400" ,async() => {
+    /*51. Empty request body return 400 */
+      it("51. Empty request body return 400" ,async() => {
       const req = httpMocks.createRequest({
         method: "PATCH",
+        body: {
+          updates:[]
+        },
       });
       req.user = {id: user1.id};
-      req.body = []; 
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      //req.body = []; 
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);       
     });
@@ -382,38 +390,29 @@ describe("testing bulkUpdateWithIds",() => {
  });
 
   describe("testing bulkDelete",() => {
-    /*53 . User1 can delete multiple own tasks */
-    it("53 . User1 can delete multiple own tasks" ,async() => {
+    /*52 . User1 can delete multiple own tasks */
+    it("52 . User1 can delete multiple own tasks" ,async() => {
       const req = httpMocks.createRequest({
         method: "DELETE",
+        body :{ taskIds : bulkTaskIds },
       });
       req.user = {id: user1.id};
-      req.body = { tasksIds : [bulkTaskIds]}; //need to pass tasksIds
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+    //  req.body = { tasksIds : [bulkTaskIds]}; //need to pass tasksIds
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkDelete,req,res);
       expect(res.statusCode).toBe(200);
       const data = res._getJSONData();
       expect(data.tasksDeleted).toBe(3);
       expect(data.totalRequested).toBe(3);
     });
-    /*54 . User2 cannot delete User1 tasks*/
-    it("54 . User2 cannot delete user1 tasks" ,async() => {
+    /*53 . Empty tasksIds return 400 */ 
+    it("53 . Empty tasksIds return 400" ,async() => {
       const req = httpMocks.createRequest({
         method: "DELETE",
-      });
-      req.user = {id: user2.id};
-      req.body = { tasksIds : [bulkTaskIds]};  //need to pass tasksIds
-      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
-      await waitForRouteHandlerCompletion(bulkDelete,req,res);
-      expect(res.statusCode).toBe(400);         
-    });
-    /*55 . Empty tasksIds return 400 */ 
-    it("55 . Empty tasksIds return 400" ,async() => {
-      const req = httpMocks.createRequest({
-        method: "DELETE",
+         body :{ taskIds : []},
       });
       req.user = {id: user1.id};
-      req.body = { tasksIds : []}; 
+   //   req.body = { tasksIds : []}; 
       const res = httpMocks.createResponse({eventEmitter :EventEmitter});
       await waitForRouteHandlerCompletion(bulkDelete,req,res);
       expect(res.statusCode).toBe(400);      

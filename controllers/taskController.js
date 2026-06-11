@@ -255,9 +255,9 @@ async function bulkUpdateWithIds(req,res,next){
 //batch partial updates 
 // Allow each item in the bulk‐update array to carry its own payload. ex:[{ id: 1, isCompleted: true }, { id: 2, priortiy:"Low" }]
 async function bulkUpdate(req, res, next) {
-  const updates = req.body;
+  const { updates } = req.body;
   if (!Array.isArray(updates) || updates.length === 0) {
-    return res.status(400).json({
+      return res.status(400).json({
       message: "Request body must be a non-empty array",
     });
   }
@@ -272,7 +272,6 @@ async function bulkUpdate(req, res, next) {
         });
       }
       const { error, value } = patchTaskSchema.validate(data, {abortEarly: false,});
-
       if (error) {
         return res.status(400).json({
           message: `Validation failed for task ${id}`,
