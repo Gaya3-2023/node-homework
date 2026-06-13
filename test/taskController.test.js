@@ -290,7 +290,6 @@ describe("testing bulkUpdateWithIds",() => {
       const res = httpMocks.createResponse({ eventEmitter : EventEmitter});
       
       await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
-      console.log(`test number 45 - ${res.statusCode}`);
       expect(res.statusCode).toBe(200);
       const data = res._getJSONData();
       expect(data.tasksUpdated).toBe(3);
