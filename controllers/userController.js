@@ -260,7 +260,8 @@ async function googleLogon(req,res,next){
        return{ user:newUser,welcomeTasks};                                 
       });//end of transactions
         const csrfToken = setJwtCookie(req,res,result.user); 
-        res.status(201).json({
+       // res.send({message:"for new user",user:result.user,csrfToken:csrfToken});
+       return res.status(201).json({
            user: result.user,
            welcomeTasks:result.welcomeTasks,
            transactionStatus:"success",
@@ -269,12 +270,13 @@ async function googleLogon(req,res,next){
      }
      else{ //if user have a database record
         const csrfToken = setJwtCookie(req,res,user);  
-      res.status(201).json({
+      //  res.send({message :"user exists already",user:user,csrfToken:csrfToken});
+     return res.status(201).json({
       user: user,
       csrfToken:csrfToken
      }); 
      }   
-     return;
+    
   }
   catch(error){
     next(error);
