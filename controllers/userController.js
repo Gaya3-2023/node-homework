@@ -13,7 +13,8 @@ const cookieFlags = (req) => {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production", // only when HTTPS is available
-    sameSite: "Strict",
+    //sameSite: "Strict",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",    
   };
 };
 
@@ -43,6 +44,41 @@ async function comparePassword(inputPassword, storedHash) {
 
 async function register(req,res,next){
    if(!req.body) req.body={};
+   let isPerson = false;
+  
+  if (req.body.recaptchaToken) {
+    const token = req.body.recaptchaToken;
+    const params = new URLSearchParams();
+    params.append("secret", process.env.RECAPTCHA_SECRET);
+    params.append("response", token);
+    params.append("remoteip", req.ip);
+    const response = await fetch(
+      // might throw an error that would cause a 500 from the error handler
+      "https://www.google.com/recaptcha/api/siteverify",
+      {
+        method: "POST",
+        body: params.toString(),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
+    );
+    const data = await response.json();
+    if (data.success) isPerson = true;
+    delete req.body.recaptchaToken;
+  } else if (    
+    process.env.RECAPTCHA_BYPASS &&
+    req.get("X-Recaptcha-Test") === process.env.RECAPTCHA_BYPASS
+  ) {
+    // might be a test environment
+    isPerson = true;
+  }
+  if (!isPerson) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ message: "Bot verification failed. Please complete the reCAPTCHA." });
+  }
+  
    const { error, value } = userSchema.validate(req.body, {
     abortEarly: false
   });
@@ -105,11 +141,12 @@ async function register(req,res,next){
 
 async function logon(req,res){
     if(!req.body) req.body={}; 
-    const email = req.body.email;   
+     // const email = req.body.email;   
+    const email = req.body.email?.trim().toLowerCase();  //since neon is storing the email in lowercase
     const result = await prisma.user.findUnique({ where: { email : email }});
     if(!result){
        return res.status(StatusCodes.UNAUTHORIZED)
-                  .json({message:"Authentication Failed"});  
+                  .json({message:"Invalid credentials"});  
      }
     //compare hashed password
     const isMatch = await comparePassword(req.body.password,result.hashedPassword);

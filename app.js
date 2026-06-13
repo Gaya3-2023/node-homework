@@ -8,6 +8,7 @@ const analyticsRouter = require("./routes/analyticsRoutes");
 
 app.set("trust proxy", 1);
 const helmet = require("helmet");
+const cors = require("cors");
 const { xss } = require("express-xss-sanitizer");
 const rateLimiter = require("express-rate-limit");
 
@@ -27,6 +28,8 @@ app.use(
 );
 app.use(helmet());
 
+app.use(cors());
+
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
@@ -35,7 +38,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({limit: "1kb"}));
+app.use(express.json({limit: "1mb"}));
 
 app.use(xss());
 
@@ -55,10 +58,12 @@ app.get("/health", async (req, res) => {
     res.status(500).json({ status: 'error', db: 'not connected', error: err.message });
   }
 });
-      
+
+/*
 app.get("/", (req, res) => {
   res.json({message: "Hello World!"});
 });
+*/
 
 app.post('/testpost',
        (req,res) => { 
