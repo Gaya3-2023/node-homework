@@ -86,4 +86,6 @@ Extra Features Added:
 
       Tested successfully with the frontend.
 
-
+5. Test cases added for bulkCreate,bulkDelete,bulkUpdate and bulkUpdateWithIds in taskController.test.js
+     new test cases number starts from 43 to 53
+     

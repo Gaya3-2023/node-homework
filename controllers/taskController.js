@@ -158,7 +158,7 @@ async function update(req,res,next){
 /*Deletes the task with a particular ID of the currently logged on user*/
 async function deleteTask(req,res,next){
   const taskToFind = parseInt(req.params?.id); 
-  if (!taskToFind) {
+  if (isNaN(taskToFind)) {
      return res.status(400).json({message: "The task ID passed is not valid."})
    }
 try{
