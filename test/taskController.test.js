@@ -284,11 +284,8 @@ describe("testing bulkUpdateWithIds",() => {
     },
       
       });
-      req.user = { id: user1.id};
-    //  req.body =  [bulkTaskIds]; // need to pass tasksIds
-     
-      const res = httpMocks.createResponse({ eventEmitter : EventEmitter});
-      
+      req.user = { id: user1.id};     
+      const res = httpMocks.createResponse({ eventEmitter : EventEmitter});      
       await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
       expect(res.statusCode).toBe(200);
       const data = res._getJSONData();
@@ -303,7 +300,6 @@ describe("testing bulkUpdateWithIds",() => {
     },
       });
       req.user = {id: user1.id};
-     // req.body =  []; 
       const res = httpMocks.createResponse({eventEmitter :EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
       expect(res.statusCode).toBe(400);      
@@ -337,7 +333,6 @@ describe("testing bulkUpdateWithIds",() => {
         }
       });
       req.user = {id: user1.id};
-      //req.body = [{ isCompleted: true},]; 
       const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);    
@@ -352,7 +347,6 @@ describe("testing bulkUpdateWithIds",() => {
         },
       });
       req.user = {id: user1.id};
-     // req.body = [{}]; 
       const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);      
@@ -366,7 +360,6 @@ describe("testing bulkUpdateWithIds",() => {
         },
       });
       req.user = {id: user1.id};
-     // req.body = [ { id: bulkTaskIds[0],priorty:"Moderate"} ]; //need to pass tasksIds
       const res = httpMocks.createResponse({eventEmitter :EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);        
@@ -380,7 +373,6 @@ describe("testing bulkUpdateWithIds",() => {
         },
       });
       req.user = {id: user1.id};
-      //req.body = []; 
       const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkUpdate,req,res);
       expect(res.statusCode).toBe(400);       
@@ -396,7 +388,6 @@ describe("testing bulkUpdateWithIds",() => {
         body :{ taskIds : bulkTaskIds },
       });
       req.user = {id: user1.id};
-    //  req.body = { tasksIds : [bulkTaskIds]}; //need to pass tasksIds
       const res = httpMocks.createResponse({eventEmitter : EventEmitter});
       await waitForRouteHandlerCompletion(bulkDelete,req,res);
       expect(res.statusCode).toBe(200);

@@ -20,7 +20,40 @@ Backend deployment on Render with Neon PostgreSQL
 - Authentication: JWT/Google OAuth
 - Deployment: Render
 
+# Project Setup Dependencies
 
+   This project uses the following dependencies. They were installed during development to support backend functionality,security,database integration, and testing.
+ 
+    - Core Server
+      - npm install express  
+      - npm install nodemon --save-dev   -- Nodemon -to automatically restart your app when you make a code change
+
+    - Environment and database
+      - npm install pg dotenv   -- installs the necessary packages for PostgreSQL Integration
+      - npm install prisma @prisma/client
+      - npx prisma init
+
+    - Authentication and security
+      - npm install jsonwebtoken cookie-parser express-xss-sanitizer express-rate-limit helmet
+
+        - jsonwebtoken - For creating and verifying JWT tokens
+        - cookie-parser - For parsing cookies from HTTP requests
+        - express-xss-sanitizer - For protecting against XSS attacks
+        - express-rate-limit - For rate limiting API requests
+        - helmet - For setting security-related HTTP headers 
+
+    -Testing
+      - npm install jest --save-dev
+      - npm install supertest --save-dev
+      - npm install node-mocks-http --save-dev
+
+    - Tooling
+      - npm install eslint-plugin-jest --save-dev 
+      - npm install globals --save-dev
+      - npm install cookies --save-dev
+
+
+ 
 # Quick Start
 
 -	Clone the repository

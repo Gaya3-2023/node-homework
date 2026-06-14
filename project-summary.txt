@@ -12,7 +12,7 @@ Extra Features Added:
     Response: {"message":"success!","tasksDeleted":3,"totalRequested":3}
 
 
-2. Bulk Udpate by Task taskIds
+2. Bulk Update by Task taskIds
     API route - /api/tasks/bulkUpdateWithIds
 
     Updates multiple tasks by setting isCompleted as true and priority as "low" when the user provides set of taskIds
