@@ -135,7 +135,7 @@ async function register(req,res,next){
    } //end of try
    catch(err){
     if(err.code === "P2002"){
-      return res.status(400).json({error: "Email already registered"});
+      return res.status(400).json({message : "Email already registered"});
     }
     else{
       return next(err);  //error handler takes care of other errors
@@ -210,31 +210,21 @@ async function show (req, res) {
 async function googleLogon(req,res,next){
   try{
     const { code } = req.body;
-   // console.log(`inside googleLogon credential - ${code}`);
     if (!code) {
-      return res.status(400).json({ error: 'No credential provided' });
+      return res.status(400).json({ message : 'No credential provided' });
     }
      const { tokens } = await client.getToken(code);
-    // console.log(tokens);
     // Verify the Google token
     const ticket = await client.verifyIdToken({
       idToken: tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
-   // console.log(ticket);    
     const payload = ticket.getPayload();
-   // console.log(payload);
-    //const { sub: googleId, email, name } = payload;
     const email = payload.email;
     const name = payload.name;
-   // console.log(`email : ${email}    ; name: ${name}`);
     //Check database for existing users or create new
      let user = await prisma.user.findUnique({ where: { email: email }});
-   //  console.log(user);
      if(!user){  //create a new record with 3 welcome tasks
-      /*user= await prisma.user.create({data: {email:email,name:name,hashedPassword:"googleUser"},
-                                       select:{name:true,email:true,id:true}}); */
-
       const result = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({data: {email:email,name:name,hashedPassword:"googleUser"},select:{name:true,email:true,id:true}})
       //Create 3 welcome tasks using createMany
@@ -260,8 +250,7 @@ async function googleLogon(req,res,next){
        return{ user:newUser,welcomeTasks};                                 
       });//end of transactions
         const csrfToken = setJwtCookie(req,res,result.user); 
-       // res.send({message:"for new user",user:result.user,csrfToken:csrfToken});
-       return res.status(201).json({
+        return res.status(201).json({
            user: result.user,
            welcomeTasks:result.welcomeTasks,
            transactionStatus:"success",
@@ -270,11 +259,7 @@ async function googleLogon(req,res,next){
      }
      else{ //if user have a database record
         const csrfToken = setJwtCookie(req,res,user);  
-      //  res.send({message :"user exists already",user:user,csrfToken:csrfToken});
-     return res.status(201).json({
-      user: user,
-      csrfToken:csrfToken
-     }); 
+        return res.status(201).json({  user: user, csrfToken:csrfToken}); 
      }   
     
   }
