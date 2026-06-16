@@ -11,6 +11,10 @@ const {
   create,
   update,
   deleteTask,
+  bulkCreate,
+  bulkDelete,
+  bulkUpdate,
+  bulkUpdateWithIds,
 } = require("../controllers/taskController");
 
 // a few useful globals
@@ -19,6 +23,7 @@ let user2 = null;
 let saveRes = null;
 let saveData = null;
 let saveTaskId = null;
+let bulkTaskIds =[];
 
 beforeAll(async () => {
   // clear database
@@ -231,6 +236,179 @@ describe("testing task creation", () => {
      expect(saveRes.statusCode).toBe(404);
   });
  });
+
+ describe("testing bulkCreate",() =>{ 
+    /*43 . User1 can create bulk tasks */
+    it("43. User1 can create bulk tasks" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "POST",
+      });
+      req.user = {id: user1.id};
+      req.body = [{ title : "bulk-task1", },
+                   {title : "bulk-task2", },
+                   {title : "bulk-task3",} ]; 
+      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      await waitForRouteHandlerCompletion(bulkCreate,req,res);
+      expect(res.statusCode).toBe(201);
+      const data = res._getJSONData();
+      expect(data.tasksCreated).toBe(3);
+      expect(data.totalRequested).toBe(3);
+      //Retrieve  created tasks ids for other bulk operations
+      const newTasksIds = await prisma.task.findMany({
+         where :{ userId : user1.id, title :{in : [ "bulk-task1", "bulk-task2","bulk-task3"],},},
+      });
+      bulkTaskIds = newTasksIds.map(task => task.id);
+      
+    });
+    /*44. Empty body should return 400 */
+    it("44. Empty body should return 400" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "POST",
+      });
+      req.user = {id: user1.id};
+      req.body = [ ]; 
+      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      await waitForRouteHandlerCompletion(bulkCreate,req,res);
+      expect(res.statusCode).toBe(400);     
+    });
+ });
+
+
+describe("testing bulkUpdateWithIds",() => {
+  /*45. User1 can update multiple tasks completed and priortiy as low*/
+   it("45 .User1 can update multiple tasks completed and priortiy as low" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "PATCH",
+        body:  {
+      taskIds: bulkTaskIds
+    },
+      
+      });
+      req.user = { id: user1.id};     
+      const res = httpMocks.createResponse({ eventEmitter : EventEmitter});      
+      await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
+      expect(res.statusCode).toBe(200);
+      const data = res._getJSONData();
+      expect(data.tasksUpdated).toBe(3);
+      expect(data.totalRequested).toBe(3);
+    });
+    it("46 . Empty tasksIds return 400" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "PATCH",
+         body: {
+      taskIds: []
+    },
+      });
+      req.user = {id: user1.id};
+      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      await waitForRouteHandlerCompletion(bulkUpdateWithIds,req,res);
+      expect(res.statusCode).toBe(400);      
+    });  
+  
+ });
+ describe("testing batch partial update -bulkUpdate" ,() => {
+  /*47.User1 can update multiple tasks with different values*/
+   it("47 . User1 can update multiple tasks with different values" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "PATCH",
+         body: {
+            updates: [ {id: bulkTaskIds[0],isCompleted: true},
+                       { id: bulkTaskIds[1],priority:"low"},
+                       {id: bulkTaskIds[2],priority:"low"} ]
+        },
+      });
+      req.user = {id: user1.id};
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
+      await waitForRouteHandlerCompletion(bulkUpdate,req,res);
+      expect(res.statusCode).toBe(200);    
+      const data = res._getJSONData();
+      expect(data.taskUpdated).toBe(3);  
+    });
+  /*48. Missing id should return 400*/
+   it("48 .Missing id in body should return 400" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "PATCH",
+        body : {
+          updates: [{ isCompleted: true},]
+        }
+      });
+      req.user = {id: user1.id};
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
+      await waitForRouteHandlerCompletion(bulkUpdate,req,res);
+      expect(res.statusCode).toBe(400);    
+     
+    });
+  /*49. Empty request body should return 400*/
+    it("49 . Empty request body should return 400" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "PATCH",
+        body: {
+          updates: []
+        },
+      });
+      req.user = {id: user1.id};
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
+      await waitForRouteHandlerCompletion(bulkUpdate,req,res);
+      expect(res.statusCode).toBe(400);      
+    });
+  /*50. Invalid priority should return 400*/
+    it("50. Invalid priority should return 400" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "PATCH",
+        body: {
+          updates:  [ { id: bulkTaskIds[0],priorty:"Moderate"} ]
+        },
+      });
+      req.user = {id: user1.id};
+      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      await waitForRouteHandlerCompletion(bulkUpdate,req,res);
+      expect(res.statusCode).toBe(400);        
+    });
+    /*51. Empty request body return 400 */
+      it("51. Empty request body return 400" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "PATCH",
+        body: {
+          updates:[]
+        },
+      });
+      req.user = {id: user1.id};
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
+      await waitForRouteHandlerCompletion(bulkUpdate,req,res);
+      expect(res.statusCode).toBe(400);       
+    });
+
+ });
+
+  describe("testing bulkDelete",() => {
+    /*52 . User1 can delete multiple own tasks */
+    it("52 . User1 can delete multiple own tasks" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "DELETE",
+        body :{ taskIds : bulkTaskIds },
+      });
+      req.user = {id: user1.id};
+      const res = httpMocks.createResponse({eventEmitter : EventEmitter});
+      await waitForRouteHandlerCompletion(bulkDelete,req,res);
+      expect(res.statusCode).toBe(200);
+      const data = res._getJSONData();
+      expect(data.tasksDeleted).toBe(3);
+      expect(data.totalRequested).toBe(3);
+    });
+    /*53 . Empty tasksIds return 400 */ 
+    it("53 . Empty tasksIds return 400" ,async() => {
+      const req = httpMocks.createRequest({
+        method: "DELETE",
+         body :{ taskIds : []},
+      });
+      req.user = {id: user1.id};
+   //   req.body = { tasksIds : []}; 
+      const res = httpMocks.createResponse({eventEmitter :EventEmitter});
+      await waitForRouteHandlerCompletion(bulkDelete,req,res);
+      expect(res.statusCode).toBe(400);      
+    });
+ });
+ 
  
  afterAll(() => {
   prisma.$disconnect();

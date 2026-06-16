@@ -8,6 +8,10 @@ const scrypt = util.promisify(crypto.scrypt);
 
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_SECRET_ID,
+          process.env.GOOGLE_REDIRECT_URI);
 
 const cookieFlags = (req) => {
   return {
@@ -131,7 +135,7 @@ async function register(req,res,next){
    } //end of try
    catch(err){
     if(err.code === "P2002"){
-      return res.status(400).json({error: "Email already registered"});
+      return res.status(400).json({message : "Email already registered"});
     }
     else{
       return next(err);  //error handler takes care of other errors
@@ -202,4 +206,66 @@ async function show (req, res) {
   res.status(200).json({User:user});
 };
 
-module.exports={register,logon,logoff,show};
+//Logon with  Google
+async function googleLogon(req,res,next){
+  try{
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ message : 'No credential provided' });
+    }
+     const { tokens } = await client.getToken(code);
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const email = payload.email;
+    const name = payload.name;
+    //Check database for existing users or create new
+     let user = await prisma.user.findUnique({ where: { email: email }});
+     if(!user){  //create a new record with 3 welcome tasks
+      const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({data: {email:email,name:name,hashedPassword:"googleUser"},select:{name:true,email:true,id:true}})
+      //Create 3 welcome tasks using createMany
+      const welcomeTaskData = [ 
+       {title:"Complete your profile",userId:newUser.id,priority:"medium"},
+       {title:"Add your first task",userId:newUser.id,priority:"high"},
+       {title:"Explore the app",userId:newUser.id,priority:"low"}];
+       await tx.task.createMany({data: welcomeTaskData});
+       //Fetch the created tasks to return them
+       const welcomeTasks = await tx.task.findMany({
+        where: {
+          userId: newUser.id,
+          title : { in: welcomeTaskData.map(t=>t.title)}
+        },
+        select:{
+          id:true,
+          title:true,
+          isCompleted:true,
+          userId:true,
+          priority:true
+        }
+       });
+       return{ user:newUser,welcomeTasks};                                 
+      });//end of transactions
+        const csrfToken = setJwtCookie(req,res,result.user); 
+        return res.status(201).json({
+           user: result.user,
+           welcomeTasks:result.welcomeTasks,
+           transactionStatus:"success",
+           csrfToken:csrfToken
+     });                               
+     }
+     else{ //if user have a database record
+        const csrfToken = setJwtCookie(req,res,user);  
+        return res.status(201).json({  user: user, csrfToken:csrfToken}); 
+     }   
+    
+  }
+  catch(error){
+    next(error);
+  }
+};
+
+module.exports={register,logon,logoff,show,googleLogon};

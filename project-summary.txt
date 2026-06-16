@@ -1,1 +1,91 @@
-https://node-homework-263.onrender.com
+Render URL -  https://node-homework-263.onrender.com
+
+Extra Features Added:
+
+1. Bulk Delete Tasks 
+    API route :   /api/tasks/bulkDelete
+
+    Deletes multiple tasks using an array of taskIds.
+
+    Request body: { "taskIds" : [42,43,44]}
+
+    Response: {"message":"success!","tasksDeleted":3,"totalRequested":3}
+
+
+2. Bulk Update by Task taskIds
+    API route - /api/tasks/bulkUpdateWithIds
+
+    Updates multiple tasks by setting isCompleted as true and priority as "low" when the user provides set of taskIds
+
+    Request body : { "taskIds" : [9,10,11]}
+
+    Response : {"message":"success!","tasksUpdated":3,"totalRequested":3}
+
+    Expected: All specified tasks will be updated with isCompleted as true and priority as "low"
+
+3. Partial Batch Updates
+
+    API route  - /api/tasks/bulkUpdate
+
+    Handles partial updates of multiple tasks in a single request.
+
+    1. Validation example(Missing id)
+       If any update object does not contain a id, the API returns an error.
+        Request body:
+            {"updates" : [{
+                    "title": "Assignment week 3-A"
+                     },
+                     {
+                      "id": 33,
+                      "isCompleted": false
+                     }
+                    ]}
+        Response: {"message":"Each update item must contain a valid id"}
+
+   2. Successful Batch Update
+        Request body:
+           {"updates" : [
+                        { "id": 42, 
+                          "title": "Assignment week 3-A"
+                        },
+                        {
+                         "id": 43,
+                         "isCompleted": true
+                        },
+                        {
+                         "id":44,
+                         "priority":"low"
+                        }
+                       ]}
+        Response: {"message":"Tasks updated successfully","taskUpdated":3,"taskRequested":3}
+  
+    
+4. Login with Google 
+
+    API route  - /api/users/googleLogon
+
+    Implemented Google oAuth login flow.
+
+    Steps Performed:
+
+      Created a project in Google Cloud Console and generated:GOOGLE_CLIENT_ID ,GOOGLE_SECRET_ID 
+      Added GOOGLE_CLIENT_ID to the frontend .env
+      Added to backend .env: GOOGLE_CLIENT_ID,GOOGLE_SECRET_ID GOOGLE_REDIRECT_URI (frontend URL)
+      Updated all environment variables in Render.com
+
+      Backend Logic:
+          After successful Google authentication:
+          If the user does not already exist:
+             A new user record is created
+             3 welcome tasks are added (same behavior as normal registration)
+             JWT cookie is set
+             User name and csrfToken are returned in the response.
+         If user already exists:
+             JWT cookie is set
+             User name and csrfToken are returned in the response.   
+
+      Tested successfully with the frontend.
+
+5. Test cases added for bulkCreate,bulkDelete,bulkUpdate and bulkUpdateWithIds in taskController.test.js
+     new test cases number starts from 43 to 53
+     
